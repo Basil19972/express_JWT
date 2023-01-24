@@ -3,10 +3,12 @@ const appUser = require('../models/appUser')
 const router = express.Router()
 const AppUser = require('../models/appUser')
 const jwt = require('../security/jwt')
+const roles = require('../enum/userRoles')
 
 
 
-router.get('/jwt', jwt.authenticateToken, (req, res) => {
+
+router.get('/jwt', (req, res, next) => jwt.authenticateToken(req, res, next, roles.USER), (req, res) => {
     res.send("Worked")
 })
 
@@ -33,7 +35,7 @@ router.get('/:id', getAppUser, (req, res) => {
 router.post('/register', async (req, res) => {
     const appUser = new AppUser({
         name: req.body.name,
-        password: req.body.password
+        password: req.body.password,
     })
     try {
         const newAppUser = await appUser.save()
@@ -49,8 +51,9 @@ router.post('/login', async (req, res) => {
     //Get user with name and PW
     const user = await appUser.findOne({ 'name': req.body.name, 'password': req.body.password })
     //check if user exists 
+    console.log(user.roles)
     if (user != null) {
-        const token = jwt.generateAccessToken({ username: req.body.name });
+        const token = jwt.generateAccessToken({ username: req.body.name }, { role: user.roles });
         res.json({ token })
     } else {
         res.status(403).json({ message: "Username or Password is worng" })

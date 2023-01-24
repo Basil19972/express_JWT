@@ -9,12 +9,12 @@ process.env.TOKEN_SECRET;
 
 
 
-function generateAccessToken(username) {
-    return jwt.sign({ username }, process.env.TOKEN_SECRET, { expiresIn: "1800s" });
+function generateAccessToken(username, role) {
+    return jwt.sign({ username, role }, process.env.TOKEN_SECRET, { expiresIn: "1800s" });
 }
 
 
-function authenticateToken(req, res, next) {
+function authenticateToken(req, res, next, role) {
     const authHeader = req.headers['authorization']
     const token = authHeader && authHeader.split(' ')[1]
 
@@ -23,11 +23,12 @@ function authenticateToken(req, res, next) {
     jwt.verify(token, process.env.TOKEN_SECRET, (err, user) => {
         console.log(err)
 
-        if (err) return res.sendStatus(403)
+        if (user.role.role == role) {
+            next()
+        } else {
+            res.sendStatus(403)
+        }
 
-        req.user = user
-
-        next()
     })
 }
 module.exports = { generateAccessToken, authenticateToken }
